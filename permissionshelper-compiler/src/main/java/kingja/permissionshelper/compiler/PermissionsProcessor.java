@@ -2,6 +2,7 @@ package kingja.permissionshelper.compiler;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -50,40 +51,8 @@ public class PermissionsProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
         mMessager.printMessage(Diagnostic.Kind.NOTE, "Begin process...");
-        Set<? extends Element> elements = roundEnvironment.getElementsAnnotatedWith(NeedPermissions.class);
-        for (Element element : elements) {
-            ExecutableElement executableElement = (ExecutableElement) element;
-            TypeElement typeElement = (TypeElement) element.getEnclosingElement();
-            String className = typeElement.getQualifiedName().toString();
-            mMessager.printMessage(Diagnostic.Kind.NOTE, "className:" + className);
-            GeneratedBody generatedBody = generatedBodys.get(className);
-            if (generatedBody == null) {
-                generatedBody = new GeneratedBody(mElementUtils, typeElement);
-                generatedBodys.put(className, generatedBody);
-            }
-            String[] permissions = executableElement.getAnnotation(NeedPermissions.class).value();
-            String[] onShowRationales = executableElement.getAnnotation(OnShowRationale.class).value();
-            String[] onPermissionDenieds = executableElement.getAnnotation(OnPermissionDenied.class).value();
-            generatedBody.putExecutableElement(permissions, executableElement);
-            generatedBody.putShowRationaleElement(onShowRationales, executableElement);
-            generatedBody.putPermissionDeniedElements(onPermissionDenieds, executableElement);
+       processAnimation(roundEnvironment,NeedPermissions.class);
 
-        }
-
-        Set<? extends Element> showRationaleElements = roundEnvironment.getElementsAnnotatedWith(OnShowRationale.class);
-        for (Element element : elements) {
-            ExecutableElement executableElement = (ExecutableElement) element;
-            TypeElement typeElement = (TypeElement) element.getEnclosingElement();
-            String className = typeElement.getQualifiedName().toString();
-            mMessager.printMessage(Diagnostic.Kind.NOTE, "className:" + className);
-            GeneratedBody generatedBody = generatedBodys.get(className);
-            if (generatedBody == null) {
-                generatedBody = new GeneratedBody(mElementUtils, typeElement);
-                generatedBodys.put(className, generatedBody);
-            }
-            String[] onShowRationales = executableElement.getAnnotation(OnShowRationale.class).value();
-            generatedBody.putShowRationaleElement(onShowRationales, executableElement);
-        }
 
 
         for (String key : generatedBodys.keySet()) {
@@ -102,6 +71,23 @@ public class PermissionsProcessor extends AbstractProcessor {
 
         }
         return true;
+    }
+
+    private Set<? extends Element> processAnimation(RoundEnvironment roundEnvironment, Class<? extends Annotation> clazz) {
+        Set<? extends Element> elements = roundEnvironment.getElementsAnnotatedWith(clazz);
+        for (Element element : elements) {
+            ExecutableElement executableElement = (ExecutableElement) element;
+            TypeElement typeElement = (TypeElement) element.getEnclosingElement();
+            String className = typeElement.getQualifiedName().toString();
+            GeneratedBody generatedBody = generatedBodys.get(className);
+            if (generatedBody == null) {
+                generatedBody = new GeneratedBody(mElementUtils, typeElement);
+                generatedBodys.put(className, generatedBody);
+            }
+//            String[] permissions = executableElement.getAnnotation(clazz).value();
+//            generatedBody.putExecutableElement(permissions, executableElement);
+        }
+        return elements;
     }
 
     @Override
