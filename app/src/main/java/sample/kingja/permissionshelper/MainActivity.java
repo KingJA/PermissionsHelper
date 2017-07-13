@@ -62,10 +62,10 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    @OnPermissionDenied({Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS})
-    public void onDeniedContacts() {
-        Log.e(TAG, "onDeniedContacts: ");
-    }
+//    @OnPermissionDenied({Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS})
+//    public void onDeniedContacts() {
+//        Log.e(TAG, "onDeniedContacts: ");
+//    }
 
     public void onCamera(View view) {
         sample.kingja.permissionshelper.MainActivityPermissionsHelper.openCameraCheckPermission(this);
