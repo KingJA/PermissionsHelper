@@ -198,17 +198,18 @@ public class GeneratedBody {
             builder.append("\n\tpublic static final class ").append(element.getSimpleName()).append
                     ("PermissionRequest implements PermissionRequest {");
 
-            builder.append("\n\t\tprivate final java.lang.ref.WeakReference<MainActivity> weakTarget;");
+            builder.append("\n\t\tprivate final java.lang.ref.WeakReference<").append(typeElement.getSimpleName())
+                    .append("> weakTarget;");
             builder.append("\n\n\t\tprivate ").append(element.getSimpleName()).append("PermissionRequest(MainActivity" +
                     " target) {");
 
-            builder.append("\n\t\t\tthis.weakTarget = new java.lang.ref.WeakReference<MainActivity>(target);");
+            builder.append("\n\t\t\tthis.weakTarget = new java.lang.ref.WeakReference<").append(typeElement.getSimpleName()).append(" > (target); ");
 
             builder.append("\n\t\t}");
             builder.append("\n\n\t\t@Override");
             builder.append("\n\t\tpublic void proceed() {");
 
-            builder.append("\n\t\t\tMainActivity target = weakTarget.get();");
+            builder.append("\n\t\t\t").append(typeElement.getSimpleName()).append(" target = weakTarget.get();") ;
             builder.append("\n\t\t\tif (target == null) return;");
             builder.append("\n\t\t\tPermissionUtils.requestPermissions(target, ").append(permissionsVar).append(",")
                     .append
