@@ -4,16 +4,14 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 
 import kingja.permissionshelper.annotations.OnPermissionDenied;
-import kingja.permissionshelper.annotations.onPermissionGranted;
 import kingja.permissionshelper.annotations.OnShowRationale;
-import sample.kingja.permissionshelper.MainActivityPermissionsHelper;
+import kingja.permissionshelper.annotations.onPermissionGranted;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -73,6 +71,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onCamera(View view) {
-        MainActivityPermissionsHelper.openCameraCheckPermission(this);
+       sample.kingja.permissionshelper.MainActivityPermissionsHelper.openCameraCheckPermission(this);
     }
 }

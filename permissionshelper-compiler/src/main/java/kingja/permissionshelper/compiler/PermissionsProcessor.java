@@ -15,6 +15,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
@@ -26,6 +27,7 @@ import kingja.permissionshelper.annotations.onPermissionGranted;
 import kingja.permissionshelper.annotations.OnPermissionDenied;
 import kingja.permissionshelper.annotations.OnShowRationale;
 
+import static javax.lang.model.element.Modifier.PUBLIC;
 
 /**
  * Description:TODO
@@ -50,6 +52,7 @@ public class PermissionsProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
+        generatedBodys.clear();
         mMessager.printMessage(Diagnostic.Kind.NOTE, "Begin process...");
         processAnimation(roundEnvironment, onPermissionGranted.class);
         processAnimation(roundEnvironment, OnShowRationale.class);
@@ -60,22 +63,26 @@ public class PermissionsProcessor extends AbstractProcessor {
         for (String key : generatedBodys.keySet()) {
             GeneratedBody generatedBody = generatedBodys.get(key);
             try {
-                JavaFileObject sourceFile = mFiler.createSourceFile(generatedBody.getFullClassName());
+                JavaFileObject sourceFile = processingEnv.getFiler().createSourceFile(generatedBody.getFullClassName
+                        (), generatedBody.getTypeElement());
                 Writer writer = sourceFile.openWriter();
                 writer.append(generatedBody.getGeneratedCode());
                 writer.flush();
                 writer.close();
             } catch (IOException e) {
-//                e.printStackTrace();
+                printError("Unable to create source file for type %s", generatedBody.getTypeElement());
             }
         }
         return true;
     }
 
-    private Set<? extends Element> processAnimation(RoundEnvironment roundEnvironment, Class<? extends Annotation>
+    private boolean processAnimation(RoundEnvironment roundEnvironment, Class<? extends Annotation>
             clazz) {
         Set<? extends Element> elements = roundEnvironment.getElementsAnnotatedWith(clazz);
         for (Element element : elements) {
+            if (!validateElement(element, clazz)) {
+                return false;
+            }
             ExecutableElement methodElement = (ExecutableElement) element;
             TypeElement typeElement = (TypeElement) element.getEnclosingElement();
             String className = typeElement.getQualifiedName().toString();
@@ -84,11 +91,11 @@ public class PermissionsProcessor extends AbstractProcessor {
                 generatedBody = new GeneratedBody(mElementUtils, typeElement, mMessager);
                 generatedBodys.put(className, generatedBody);
             }
-
             putAnnoatationElements(generatedBody, clazz, methodElement);
         }
-        return elements;
+        return true;
     }
+
 
     private void putAnnoatationElements(GeneratedBody generatedBody, Class<? extends Annotation> clazz,
                                         ExecutableElement methodElement) {
@@ -102,7 +109,7 @@ public class PermissionsProcessor extends AbstractProcessor {
         } else if (annotation instanceof OnNeverAskAgain) {
             generatedBody.putNeverAskMethod(getStringFromArr(((OnNeverAskAgain) annotation).value()), methodElement);
         } else {
-            error("%s process error", annotation.getClass().getSimpleName());
+            printError("%s is a  unknown Annotation type", annotation.getClass().getSimpleName());
         }
     }
 
@@ -120,12 +127,6 @@ public class PermissionsProcessor extends AbstractProcessor {
         return animationTypes;
     }
 
-    private void error(String message, Object... args) {
-        if (args.length > 0) {
-            message = String.format(message, args);
-        }
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, message);
-    }
 
     private String getStringFromArr(String[] arr) {
         StringBuilder sb = new StringBuilder();
@@ -140,5 +141,25 @@ public class PermissionsProcessor extends AbstractProcessor {
         }
         sb.append("}");
         return sb.toString();
+    }
+
+    private void printError(String message, Object... args) {
+        if (args.length > 0) {
+            message = String.format(message, args);
+        }
+        mMessager.printMessage(Diagnostic.Kind.NOTE, message);
+    }
+
+    private boolean validateElement(Element element, Class<? extends Annotation> clazz) {
+        if (element.getKind() != ElementKind.METHOD) {
+            printError("%s must be eclared on method ", clazz.getClass().getSimpleName());
+            return false;
+        }
+
+        if (!element.getModifiers().contains(PUBLIC)) {
+            printError("the modifier of %s() must be public", clazz.getClass().getSimpleName());
+            return false;
+        }
+        return true;
     }
 }

@@ -60,6 +60,10 @@ public class GeneratedBody {
         return fullName;
     }
 
+    public TypeElement getTypeElement() {
+        return typeElement;
+    }
+
     public String getGeneratedCode() {
         StringBuilder builder = new StringBuilder();
         builder.append("// Generated code. Do not modify!");
