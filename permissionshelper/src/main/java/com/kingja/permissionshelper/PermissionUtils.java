@@ -171,4 +171,8 @@ public final class PermissionUtils {
     public static void requestPermissions(Fragment fragment, String[] permissions, int requestCode) {
         FragmentCompat.requestPermissions(fragment, permissions, requestCode);
     }
+
+    public static void requestPermissions(Activity activity, String[] permissions, int requestCode) {
+        ActivityCompat.requestPermissions(activity, permissions, requestCode);
+    }
 }

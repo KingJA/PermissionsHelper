@@ -11,8 +11,8 @@ import java.lang.annotation.Target;
  * Author:KingJA
  * Email:kingjavip@gmail.com
  */
-@Retention(RetentionPolicy.CLASS)
 @Target(ElementType.METHOD)
-public @interface NeedPermissions {
+@Retention(RetentionPolicy.CLASS)
+public @interface OnNeverAskAgain {
     String[] value();
 }
