@@ -71,6 +71,7 @@ public class GeneratedBody {
         builder.append(getVariable());
         builder.append(getGrantedMethod());
         builder.append(getRequestPermissionsResult());
+        builder.append(getPermissionRequest());
         builder.append("\n}");
         return builder.toString();
     }
@@ -143,6 +144,7 @@ public class GeneratedBody {
         return builder.toString();
     }
 
+    //new ShowContactsPermissionRequest(target
     public String getGrantedMethod() {
         StringBuilder builder = new StringBuilder();
         for (String key : grantMethods.keySet()) {
@@ -158,7 +160,8 @@ public class GeneratedBody {
             builder.append("\n\t\t} else {");
             builder.append("\n\t\t\tif (PermissionUtils.shouldShowRequestPermissionRationale(target, ").append
                     (permissionsVar).append(")) {");
-            builder.append("\n\t\t\t\ttarget.").append(rationaleMethods.get(key).getSimpleName()).append("();");
+            builder.append("\n\t\t\t\ttarget.").append(rationaleMethods.get(key).getSimpleName()).append("(new ")
+                    .append(element.getSimpleName()).append("PermissionRequest (target));");
             builder.append("\n\t\t\t} else {");
             builder.append("\n\t\t\t\tPermissionUtils.requestPermissions(target, ").append(permissionsVar).append("," +
                     "").append(requestVar).append(");");
@@ -185,5 +188,48 @@ public class GeneratedBody {
         return sb.toString();
     }
 
+    private String getPermissionRequest() {
+        StringBuilder builder = new StringBuilder();
+        for (String key : grantMethods.keySet()) {
+            ExecutableElement element = grantMethods.get(key);
+            String methodUpperCase = element.getSimpleName().toString().toUpperCase();
+            String requestVar = REQUEST_ + methodUpperCase;
+            String permissionsVar = PERMISSIONS_ + methodUpperCase;
+            builder.append("\n\tpublic static final class ").append(element.getSimpleName()).append
+                    ("PermissionRequest implements PermissionRequest {");
 
+            builder.append("\n\t\tprivate final java.lang.ref.WeakReference<MainActivity> weakTarget;");
+            builder.append("\n\n\t\tprivate ").append(element.getSimpleName()).append("PermissionRequest(MainActivity" +
+                    " target) {");
+
+            builder.append("\n\t\t\tthis.weakTarget = new java.lang.ref.WeakReference<MainActivity>(target);");
+
+            builder.append("\n\t\t}");
+            builder.append("\n\n\t\t@Override");
+            builder.append("\n\t\tpublic void proceed() {");
+
+            builder.append("\n\t\t\tMainActivity target = weakTarget.get();");
+            builder.append("\n\t\t\tif (target == null) return;");
+            builder.append("\n\t\t\tPermissionUtils.requestPermissions(target, ").append(permissionsVar).append(",")
+                    .append
+                            (requestVar).append(");");
+
+            builder.append("\n\t\t}");
+
+            builder.append("\n\n\t\t@Override");
+            builder.append("\n\t\tpublic void cancel() {");
+
+            if (hasDeniedMethod(key)) {
+                builder.append("\n\t\t\tMainActivity target = weakTarget.get();");
+                builder.append("\n\t\t\tif (target == null) return;");
+                builder.append("\n\t\t\ttarget.").append(deniedMethods.get(key)).append(";");
+            }
+
+            builder.append("\n\t\t}");
+
+            builder.append("\n\t}");
+        }
+
+        return builder.toString();
+    }
 }

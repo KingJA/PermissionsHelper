@@ -12,6 +12,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 
+import com.kingja.permissionshelper.PermissionRequest;
+
 import kingja.permissionshelper.annotations.OnNeverAskAgain;
 import kingja.permissionshelper.annotations.OnPermissionDenied;
 import kingja.permissionshelper.annotations.OnShowRationale;
@@ -38,8 +40,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @OnShowRationale(Manifest.permission.CAMERA)
-    public void onShowRationaleCamera() {
-        showRationaleDialog("需要打开相机权限");
+    public void onShowRationaleCamera(PermissionRequest request) {
+        showRationaleDialog("需要打开相机权限", request);
     }
 
 
@@ -55,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @OnShowRationale({Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS})
-    public void onShowRationaleContacts() {
+    public void onShowRationaleContacts(PermissionRequest request) {
         Log.e(TAG, "onShowRationaleContacts: ");
 
     }
@@ -88,16 +90,18 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void showRationaleDialog(String message) {
+    private void showRationaleDialog(String message, final PermissionRequest request) {
         new AlertDialog.Builder(this)
                 .setPositiveButton("确认", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(@NonNull DialogInterface dialog, int which) {
+                        request.proceed();
                     }
                 })
                 .setNegativeButton("取消", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(@NonNull DialogInterface dialog, int which) {
+                        request.cancel();
                     }
                 })
                 .setCancelable(false)
