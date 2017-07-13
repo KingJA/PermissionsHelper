@@ -2,16 +2,20 @@ package sample.kingja.permissionshelper;
 
 import android.Manifest;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 
+import kingja.permissionshelper.annotations.OnNeverAskAgain;
 import kingja.permissionshelper.annotations.OnPermissionDenied;
 import kingja.permissionshelper.annotations.OnShowRationale;
-import kingja.permissionshelper.annotations.onPermissionGranted;
+import kingja.permissionshelper.annotations.OnPermissionGranted;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,30 +27,21 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
     }
 
-    @onPermissionGranted(Manifest.permission.CAMERA)
+    @OnPermissionGranted(Manifest.permission.CAMERA)
     public void openCamera() {
         Log.e(TAG, "openCamera: ");
     }
 
+    @OnNeverAskAgain(Manifest.permission.CAMERA)
+    public void onNeverAskOpenCamera() {
+        showSettingdDialog("相机");
+    }
+
     @OnShowRationale(Manifest.permission.CAMERA)
     public void onShowRationaleCamera() {
-        new AlertDialog.Builder(this)
-                .setPositiveButton("确认", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(@NonNull DialogInterface dialog, int which) {
-//                        ActivityCompat.requestPermissions(PermissionActivity.this, new String[]{Manifest.permission
-//                                .CAMERA}, REQUEST_CAMERA);
-                    }
-                })
-                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(@NonNull DialogInterface dialog, int which) {
-                    }
-                })
-                .setCancelable(false)
-                .setMessage("需要打开相机权限")
-                .show();
+        showRationaleDialog("需要打开相机权限");
     }
+
 
     @OnPermissionDenied(Manifest.permission.CAMERA)
     public void onDeniedCamera() {
@@ -54,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    @onPermissionGranted({Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS})
+    @OnPermissionGranted({Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS})
     public void getContacts() {
         Log.e(TAG, "getContacts: ");
     }
@@ -71,6 +66,56 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onCamera(View view) {
-       sample.kingja.permissionshelper.MainActivityPermissionsHelper.openCameraCheckPermission(this);
+        sample.kingja.permissionshelper.MainActivityPermissionsHelper.openCameraCheckPermission(this);
+    }
+
+    public void showSettingdDialog(String message) {
+        new AlertDialog.Builder(this)
+                .setPositiveButton("设置", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        startAppSettings();
+                    }
+                })
+                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                })
+                .setCancelable(false)
+                .setMessage(String.format("当前应用缺少%s权限\n请点击\"设置\"-\"权限\"打开全选\n最后点击两次返回按钮即可返回应用", message))
+                .show();
+    }
+
+    private void showRationaleDialog(String message) {
+        new AlertDialog.Builder(this)
+                .setPositiveButton("确认", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(@NonNull DialogInterface dialog, int which) {
+                    }
+                })
+                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(@NonNull DialogInterface dialog, int which) {
+                    }
+                })
+                .setCancelable(false)
+                .setMessage(message)
+                .show();
+    }
+
+    private void startAppSettings() {
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.fromParts("package", getPackageName(), null));
+        startActivity(intent);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[]
+            grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        sample.kingja.permissionshelper.MainActivityPermissionsHelper.onRequestPermissionsResult(this, requestCode,
+                grantResults);
     }
 }

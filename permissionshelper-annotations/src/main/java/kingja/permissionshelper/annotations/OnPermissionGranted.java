@@ -13,6 +13,6 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.METHOD)
-public @interface onPermissionGranted {
+public @interface OnPermissionGranted {
     String[] value();
 }

@@ -3,15 +3,12 @@ package kingja.permissionshelper.compiler;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import javax.annotation.processing.Filer;
-import javax.annotation.processing.Messager;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
-import javax.tools.Diagnostic;
 
-import kingja.permissionshelper.annotations.onPermissionGranted;
+import kingja.permissionshelper.annotations.OnPermissionGranted;
 
 /**
  * Description:TODO
@@ -21,6 +18,8 @@ import kingja.permissionshelper.annotations.onPermissionGranted;
  */
 public class GeneratedBody {
     private final String SUFFIX = "PermissionsHelper";
+    private static final String REQUEST_ = "REQUEST_";
+    private static final String PERMISSIONS_ = "PERMISSIONS_";
     private Map<String, ExecutableElement> grantMethods = new LinkedHashMap<>();
     private Map<String, ExecutableElement> rationaleMethods = new LinkedHashMap<>();
     private Map<String, ExecutableElement> deniedMethods = new LinkedHashMap<>();
@@ -28,14 +27,12 @@ public class GeneratedBody {
     private final String fullName;
     private final String packageName;
     private TypeElement typeElement;
-    private Messager mMessager;
 
-    public GeneratedBody(Elements mElementUtils, TypeElement typeElement, Messager mMessager) {
+    public GeneratedBody(Elements mElementUtils, TypeElement typeElement) {
         this.typeElement = typeElement;
-        this.mMessager = mMessager;
         PackageElement packageElement = mElementUtils.getPackageOf(typeElement);
-        packageName = packageElement.getQualifiedName().toString();
         String className = typeElement.getSimpleName().toString();
+        packageName = packageElement.getQualifiedName().toString();
         fullName = className + SUFFIX;
     }
 
@@ -66,16 +63,31 @@ public class GeneratedBody {
 
     public String getGeneratedCode() {
         StringBuilder builder = new StringBuilder();
-        builder.append("// Generated code. Do not modify!");
+        builder.append("// Generated code from PermissionsHelper. Do not modify!");
         builder.append("\npackage ").append(packageName).append(";");
         builder.append("\n\nimport ").append(packageName).append(".*").append(";");
         builder.append("\n\nimport com.kingja.permissionshelper.*;");
         builder.append("\n\nfinal class ").append(fullName).append(" {");
+        builder.append(getVariable());
         builder.append(getGrantedMethod());
-
         builder.append(getRequestPermissionsResult());
-
         builder.append("\n}");
+        return builder.toString();
+    }
+
+
+    private String getVariable() {
+        StringBuilder builder = new StringBuilder();
+        int requestCode = 0;
+        for (String key : grantMethods.keySet()) {
+            ExecutableElement executableElement = grantMethods.get(key);
+            String methodName = executableElement.getSimpleName().toString().toUpperCase();
+            builder.append("\n\tprivate static final int ").append(REQUEST_).append(methodName).append(" = ").append
+                    (requestCode++).append(";");
+            builder.append("\n\tprivate static final String[]").append(PERMISSIONS_).append(methodName).append(" = ")
+                    .append
+                            (getPermissions(executableElement)).append(";");
+        }
         return builder.toString();
     }
 
@@ -102,13 +114,13 @@ public class GeneratedBody {
             ExecutableElement grantedMethod = grantMethods.get(key);
             String grantedName = grantedMethod.getSimpleName().toString();
 
-            builder.append("\n\t\t\tcase REQUEST_").append(grantedName.toUpperCase()).append(":");
+            builder.append("\n\t\t\tcase ").append(REQUEST_).append(grantedName.toUpperCase()).append(":");
             builder.append("\n\t\t\t\tif (PermissionUtils.verifyPermissions(grantResults)) {");
             builder.append("\n\t\t\t\t\ttarget.").append(grantedName).append("();");
             builder.append("\n\t\t\t\t} else {");
 
             builder.append("\n\t\t\t\t\tif (!PermissionUtils.shouldShowRequestPermissionRationale(target, ").append
-                    ("PERMISSIONS_").append(grantedName.toUpperCase()).append(")) {");
+                    (PERMISSIONS_).append(grantedName.toUpperCase()).append(")) {");
             if (hasNeverAskMethod(key)) {
                 builder.append("\n\t\t\t\t\t\ttarget.").append(getMethodName(neverAskMethods, key)).append("();");
             }
@@ -122,11 +134,7 @@ public class GeneratedBody {
 
             builder.append("\n\t\t\t\t}");
             builder.append("\n\t\t\t\tbreak;");
-
-
         }
-
-
         builder.append("\n\t\t\tdefault:");
         builder.append("\n\t\t\t\tbreak;");
         builder.append("\n\t\t\t}");
@@ -137,21 +145,16 @@ public class GeneratedBody {
 
     public String getGrantedMethod() {
         StringBuilder builder = new StringBuilder();
-        int requestCode = 0;
         for (String key : grantMethods.keySet()) {
-            ExecutableElement executableElement = grantMethods.get(key);
-            String methodName = executableElement.getSimpleName().toString();
-            String requestVar = "REQUEST_" + methodName.toUpperCase();
-            String permissionsVar = "PERMISSIONS_" + methodName.toUpperCase();
-            builder.append("\nprivate static final int ").append(requestVar).append(" = ").append
-                    (requestCode++).append(";");
-            builder.append("\nprivate static final String[]").append(permissionsVar).append(" = ").append
-                    (getPermissions(executableElement)).append(";");
-            builder.append("\n\tpublic static void ").append(methodName).append("CheckPermission (").append
+            ExecutableElement element = grantMethods.get(key);
+            String methodUpperCase = element.getSimpleName().toString().toUpperCase();
+            String requestVar = REQUEST_ + methodUpperCase;
+            String permissionsVar = PERMISSIONS_ + methodUpperCase;
+            builder.append("\n\tpublic static void ").append(element.getSimpleName()).append("CheckPermission (").append
                     (typeElement.getSimpleName().toString()).append(" target) {");
             builder.append("\n\t\tif (PermissionUtils.hasSelfPermissions(target, ").append(permissionsVar).append("))" +
                     " {");
-            builder.append("\n\t\t\ttarget.").append(methodName).append("();");
+            builder.append("\n\t\t\ttarget.").append(element.toString()).append(";");
             builder.append("\n\t\t} else {");
             builder.append("\n\t\t\tif (PermissionUtils.shouldShowRequestPermissionRationale(target, ").append
                     (permissionsVar).append(")) {");
@@ -169,7 +172,7 @@ public class GeneratedBody {
     private String getPermissions(ExecutableElement executableElement) {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
-        String[] permissions = executableElement.getAnnotation(onPermissionGranted.class).value();
+        String[] permissions = executableElement.getAnnotation(OnPermissionGranted.class).value();
         for (int i = 0; i < permissions.length; i++) {
             sb.append("\"");
             sb.append(permissions[i]);

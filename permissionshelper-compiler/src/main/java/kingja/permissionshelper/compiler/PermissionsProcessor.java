@@ -23,7 +23,7 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
 import kingja.permissionshelper.annotations.OnNeverAskAgain;
-import kingja.permissionshelper.annotations.onPermissionGranted;
+import kingja.permissionshelper.annotations.OnPermissionGranted;
 import kingja.permissionshelper.annotations.OnPermissionDenied;
 import kingja.permissionshelper.annotations.OnShowRationale;
 
@@ -53,8 +53,7 @@ public class PermissionsProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
         generatedBodys.clear();
-        mMessager.printMessage(Diagnostic.Kind.NOTE, "Begin process...");
-        processAnimation(roundEnvironment, onPermissionGranted.class);
+        processAnimation(roundEnvironment, OnPermissionGranted.class);
         processAnimation(roundEnvironment, OnShowRationale.class);
         processAnimation(roundEnvironment, OnPermissionDenied.class);
         processAnimation(roundEnvironment, OnNeverAskAgain.class);
@@ -88,7 +87,7 @@ public class PermissionsProcessor extends AbstractProcessor {
             String className = typeElement.getQualifiedName().toString();
             GeneratedBody generatedBody = generatedBodys.get(className);
             if (generatedBody == null) {
-                generatedBody = new GeneratedBody(mElementUtils, typeElement, mMessager);
+                generatedBody = new GeneratedBody(mElementUtils, typeElement);
                 generatedBodys.put(className, generatedBody);
             }
             putAnnoatationElements(generatedBody, clazz, methodElement);
@@ -100,8 +99,8 @@ public class PermissionsProcessor extends AbstractProcessor {
     private void putAnnoatationElements(GeneratedBody generatedBody, Class<? extends Annotation> clazz,
                                         ExecutableElement methodElement) {
         Annotation annotation = methodElement.getAnnotation(clazz);
-        if (annotation instanceof onPermissionGranted) {
-            generatedBody.putGrantMethod(getStringFromArr(((onPermissionGranted) annotation).value()), methodElement);
+        if (annotation instanceof OnPermissionGranted) {
+            generatedBody.putGrantMethod(getStringFromArr(((OnPermissionGranted) annotation).value()), methodElement);
         } else if (annotation instanceof OnShowRationale) {
             generatedBody.putRationaleMethod(getStringFromArr(((OnShowRationale) annotation).value()), methodElement);
         } else if (annotation instanceof OnPermissionDenied) {
@@ -121,7 +120,7 @@ public class PermissionsProcessor extends AbstractProcessor {
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         Set<String> animationTypes = new LinkedHashSet<>();
-        animationTypes.add(onPermissionGranted.class.getCanonicalName());
+        animationTypes.add(OnPermissionGranted.class.getCanonicalName());
         animationTypes.add(OnShowRationale.class.getCanonicalName());
         animationTypes.add(OnPermissionDenied.class.getCanonicalName());
         return animationTypes;
@@ -157,7 +156,7 @@ public class PermissionsProcessor extends AbstractProcessor {
         }
 
         if (!element.getModifiers().contains(PUBLIC)) {
-            printError("the modifier of %s() must be public", clazz.getClass().getSimpleName());
+            printError("the modifier of %s() must be public", element.getSimpleName());
             return false;
         }
         return true;
