@@ -61,16 +61,7 @@ public class PermissionsProcessor extends AbstractProcessor {
 
         for (String key : generatedBodys.keySet()) {
             GeneratedBody generatedBody = generatedBodys.get(key);
-            try {
-                JavaFileObject sourceFile = processingEnv.getFiler().createSourceFile(generatedBody.getFullClassName
-                        (), generatedBody.getTypeElement());
-                Writer writer = sourceFile.openWriter();
-                writer.append(generatedBody.getGeneratedCode());
-                writer.flush();
-                writer.close();
-            } catch (IOException e) {
-                printError("Unable to create source file for type %s", generatedBody.getTypeElement());
-            }
+            generatedBody.generateBody(mFiler);
         }
         return true;
     }
