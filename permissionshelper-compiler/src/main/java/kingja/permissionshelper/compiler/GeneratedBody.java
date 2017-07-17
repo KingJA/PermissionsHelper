@@ -5,11 +5,11 @@ import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -19,11 +19,8 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
-import javax.xml.stream.events.XMLEvent;
 
 import kingja.permissionshelper.annotations.OnPermissionGranted;
-
-import static org.checkerframework.checker.units.UnitsTools.s;
 
 
 /**
@@ -47,6 +44,7 @@ public class GeneratedBody {
     private TypeElement typeElement;
     private ClassName PERMISSION_UTILS = ClassName.get("com.kingja.permissionshelper", "PermissionUtils");
     private ClassName PERMISSION_REQUEST = ClassName.get("com.kingja.permissionshelper", "PermissionRequest");
+    private ClassName WEAKREFERENCE = ClassName.get("java.lang.ref", "WeakReference");
 
     private TypeName getClassName(TypeElement typeElement) {
         return ClassName.get(typeElement.asType());
@@ -80,7 +78,7 @@ public class GeneratedBody {
         /*========Inner Class=========*/
         for (String key : grantMethods.keySet()) {
             ExecutableElement element = grantMethods.get(key);
-            typeBuilder.addType(createPermissionsRequest(element.getSimpleName().toString()));
+            typeBuilder.addType(createPermissionsRequest(element.getSimpleName().toString(), key));
         }
 
         /*=================*/
@@ -138,11 +136,26 @@ public class GeneratedBody {
 
         for (String key : grantMethods.keySet()) {
             ExecutableElement element = grantMethods.get(key);
-            String method=element.getSimpleName().toString();
+            String method = element.getSimpleName().toString();
             String permissionField = PERMISSIONS_ + method.toUpperCase();
             String requestField = REQUEST_ + method.toUpperCase();
 
-            builder.addCode("case "+requestField+":\n");
+            builder.addCode("case " + requestField + ":\n");
+
+            builder.beginControlFlow("if($T.verifyPermissions(grantResults))", PERMISSION_UTILS);
+            builder.addStatement("target." + method + "()");
+            builder.nextControlFlow("else");
+            builder.beginControlFlow("if(!$T.shouldShowRequestPermissionRationale(target, " + permissionField + "))",
+                    PERMISSION_UTILS);
+            if (hasNeverAskMethod(key)) {
+                builder.addStatement("target." + neverAskMethods.get(key).getSimpleName().toString() + "()");
+            }
+            if (hasDeniedMethod(key)) {
+                builder.nextControlFlow("else");
+                builder.addStatement("target." + deniedMethods.get(key).getSimpleName().toString() + "()");
+            }
+            builder.endControlFlow();
+            builder.endControlFlow();
             builder.addStatement("break");
 
         }
@@ -168,10 +181,13 @@ public class GeneratedBody {
                 (CodeBlock.of(arrStr)).build();
     }
 
-    private TypeSpec createPermissionsRequest(String name) {
+    private TypeSpec createPermissionsRequest(String name, String key) {
         TypeSpec.Builder typeBuilder = TypeSpec.classBuilder(getUpperCamelCase(name));
         typeBuilder.addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL);
         typeBuilder.addSuperinterface(PERMISSION_REQUEST);
+
+        String permissionField = PERMISSIONS_ + name.toUpperCase();
+        String requestField = REQUEST_ + name.toUpperCase();
 
         MethodSpec constructor = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PRIVATE)
@@ -183,16 +199,28 @@ public class GeneratedBody {
         proceedBuilder.returns(TypeName.VOID);
         proceedBuilder.addModifiers(Modifier.PUBLIC);
         proceedBuilder.addAnnotation(Override.class);
+        proceedBuilder.addStatement("$T target = weakTarget.get()", getClassName(typeElement));
+        proceedBuilder.addStatement("if (target == null) return");
+        proceedBuilder.addStatement("$T.requestPermissions(target, " + permissionField + ", " + requestField + ")",
+                PERMISSION_UTILS);
         MethodSpec processMethodSpec = proceedBuilder.build();
 
         MethodSpec.Builder cancelBuilder = MethodSpec.methodBuilder("cancel");
         cancelBuilder.returns(TypeName.VOID);
         cancelBuilder.addModifiers(Modifier.PUBLIC);
         cancelBuilder.addAnnotation(Override.class);
+
+        if (hasDeniedMethod(key)) {
+            cancelBuilder.addStatement("$T target = weakTarget.get()", getClassName(typeElement));
+            cancelBuilder.addStatement("if (target == null) return");
+            cancelBuilder.addStatement("target." + deniedMethods.get(key).getSimpleName().toString() + "()");
+        }
+
         MethodSpec cancelMethodSpec = cancelBuilder.build();
 
 
-        FieldSpec weakTarget = FieldSpec.builder(WeakReference.class, "weakTarget", Modifier.PRIVATE, Modifier.FINAL)
+        FieldSpec weakTarget = FieldSpec.builder(ParameterizedTypeName.get(WEAKREFERENCE, getClassName
+                (typeElement)), "weakTarget", Modifier.PRIVATE, Modifier.FINAL)
                 .build();
 
         typeBuilder.addMethod(constructor);

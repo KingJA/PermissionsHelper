@@ -4,8 +4,8 @@ dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile project(':permissionshelper-annotations')
     compile 'com.squareup:javapoet:1.9.0'
-    compile 'org.checkerframework:checker:2.1.10'
+//    compile 'org.checkerframework:checker:2.1.10'
 }
 
-sourceCompatibility = "1.8"
-targetCompatibility = "1.8"
+sourceCompatibility = "1.7"
+targetCompatibility = "1.7"
