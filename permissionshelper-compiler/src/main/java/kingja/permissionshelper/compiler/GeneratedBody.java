@@ -84,7 +84,8 @@ public class GeneratedBody {
         /*=================*/
         for (String key : grantMethods.keySet()) {
             ExecutableElement element = grantMethods.get(key);
-            typeBuilder.addMethod(createCheckPermission(element.getSimpleName().toString(), key, hasDeniedMethod(key)));
+            typeBuilder.addMethod(createCheckPermission(element.getSimpleName().toString(), key, hasRationaleMethod
+                    (key)));
         }
 
         typeBuilder.addMethod(createResult());
@@ -113,7 +114,7 @@ public class GeneratedBody {
         builder.beginControlFlow("if($T.shouldShowRequestPermissionRationale(target, " + permissionField + "))",
                 PERMISSION_UTILS);
         if (hasRationale) {
-            builder.addStatement("target." + rationaleMethods.get(key).getSimpleName().toString() + "(new " +
+            builder.addStatement("target." + getMethodName(rationaleMethods, key) + "(new " +
                     "" + getUpperCamelCase(method) + "(target))");
         }
         builder.nextControlFlow("else");
@@ -125,7 +126,6 @@ public class GeneratedBody {
     }
 
     private MethodSpec createResult() {
-
         MethodSpec.Builder builder = MethodSpec.methodBuilder("onRequestPermissionsResult");
         builder.returns(TypeName.VOID);
         builder.addModifiers(Modifier.PUBLIC, Modifier.STATIC);
@@ -148,26 +148,20 @@ public class GeneratedBody {
             builder.beginControlFlow("if(!$T.shouldShowRequestPermissionRationale(target, " + permissionField + "))",
                     PERMISSION_UTILS);
             if (hasNeverAskMethod(key)) {
-                builder.addStatement("target." + neverAskMethods.get(key).getSimpleName().toString() + "()");
+                builder.addStatement("target." + getMethodName(neverAskMethods, key) + "()");
             }
             if (hasDeniedMethod(key)) {
                 builder.nextControlFlow("else");
-                builder.addStatement("target." + deniedMethods.get(key).getSimpleName().toString() + "()");
+                builder.addStatement("target." + getMethodName(deniedMethods, key) + "()");
             }
             builder.endControlFlow();
             builder.endControlFlow();
             builder.addStatement("break");
 
         }
-
-
         builder.addCode("default:\n");
         builder.addStatement("break");
-
-
         builder.endControlFlow();
-
-
         return builder.build();
     }
 
@@ -213,7 +207,7 @@ public class GeneratedBody {
         if (hasDeniedMethod(key)) {
             cancelBuilder.addStatement("$T target = weakTarget.get()", getClassName(typeElement));
             cancelBuilder.addStatement("if (target == null) return");
-            cancelBuilder.addStatement("target." + deniedMethods.get(key).getSimpleName().toString() + "()");
+            cancelBuilder.addStatement("target." + getMethodName(deniedMethods, key) + "()");
         }
 
         MethodSpec cancelMethodSpec = cancelBuilder.build();

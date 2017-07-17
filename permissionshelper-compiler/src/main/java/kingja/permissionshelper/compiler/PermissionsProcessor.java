@@ -1,7 +1,5 @@
 package kingja.permissionshelper.compiler;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -20,11 +18,10 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
 
 import kingja.permissionshelper.annotations.OnNeverAskAgain;
-import kingja.permissionshelper.annotations.OnPermissionGranted;
 import kingja.permissionshelper.annotations.OnPermissionDenied;
+import kingja.permissionshelper.annotations.OnPermissionGranted;
 import kingja.permissionshelper.annotations.OnShowRationale;
 
 import static javax.lang.model.element.Modifier.PUBLIC;
